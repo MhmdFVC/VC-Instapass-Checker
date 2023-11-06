@@ -3,7 +3,7 @@
 Checks for instapasses. Only supports JP for now.
 1) Enter a mission ID. You're given a list of all the missions with their IDs when you first open the tool.
 2) Enter a range of global or local (to your selected mission) offsets in main.scm to check.
-4) Specify if you want to perform the search with some mission which is situated prior to your selected mission in the script (see mission ID list). For example, if you're looking for Taxi Driver instapass, you could enter 0 to just look for potential instapasses when starting taxi itself, or specify 1 for Taxi Driver instapasses where you'd actually start Cabmaggedon. I'm honestly not sure if this works exactly the way I think it does, but some implementation is there (it just adds the sizes of the preceding missions to your specified offset range).
+4) Specify a number of missions prior to your selected mission in the script (see mission ID list) to search for instapasses. For example, if you're looking for Taxi Driver instapass, you could enter 0 to just look for potential instapasses when just starting taxi itself, or specify 1 for Taxi Driver instapasses where you'd actually start Cabmaggedon. I'm honestly not sure if this works exactly the way I think it does, but some implementation is there (it just adds the sizes of the preceding missions to your specified offset range).
 5) Any mission longer than the final (local) offset range will then be searched for waits within the offset range. If there is a match, the mission and where the wait was found is printed to the console.
 
 ## Tips on getting your offsets
