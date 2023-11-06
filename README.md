@@ -1,6 +1,6 @@
 # VC Instapass Checker
  
-Checks for instapasses. Only supports JP for now.
+Checks for potential instapasses. Only supports JP for now.
 1) Enter a mission ID. You're given a list of all the missions with their IDs when you first open the tool.
 2) Enter a range of global or local (to your selected mission) offsets in main.scm to check.
 4) Specify a number of missions prior to your selected mission in the script (see mission ID list) to search for instapasses. For example, if you're looking for Taxi Driver instapass, you could enter 0 to just look for potential instapasses when just starting taxi itself, or specify 1 for Taxi Driver instapasses where you'd actually start Cabmaggedon. I'm honestly not sure if this works exactly the way I think it does, but some implementation is there (it just adds the size(s) of the preceding mission(s) to your specified offset range).
