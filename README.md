@@ -17,4 +17,4 @@ The easiest way to find your exact range will be using global offsets as well - 
 
 
 ## Disclaimer
-If you know this stuff better than I do, feel free to tell me about it and how. This was primarily done as an exercise for myself, but I believe it could have some use since I don't think another tool like this is publicly available, and any feedback on improvements that should be made are welcome. I am also rather fuzzy about what makes missions require "stack fixing", but that could perhaps be another automated check that would be beneficial.
+If you know this stuff better than I do, feel free to tell me about it and how. This was primarily done as an exercise for myself, but I believe it could have some use since I don't think another tool like this is publicly available, and any feedback on improvements that should be made are welcome.
