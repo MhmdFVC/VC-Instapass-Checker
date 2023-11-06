@@ -193,7 +193,7 @@ int main()
 	}
 	
 	// Prompt for global or local offset input for IP check range
-	printf("Please now enter the range of mission offsets you would like to check for instapasses for. Enter global or local offset? g/l: ");
+	printf("Please now enter the range of mission offsets you would like to check for instapasses for.\nEnter global or local offset? g/l: ");
 	getchar();	// To clear dangling newline
 	offsetType = getchar();
 	if (!(offsetType == 'g' || offsetType == 'l'))
@@ -281,7 +281,7 @@ int main()
 			}
 		} // Done checking current mission for waits
 	} // All applicable missions checked
-	printf("\n\nPress enter to exit program.");
+	printf("\n\nDone. Press enter to exit program.");
 	getchar();
 	getchar();
     cleanup(0);	// End prog successfully
