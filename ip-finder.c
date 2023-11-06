@@ -4,9 +4,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// Is preceded by 51 00 (return) and starts a typical missionstart opcode (50 00 or A4 03) 
-//#define STARTOFMISSION *(bufferOffset-2) == 0x51 && *(bufferOffset-1) == 0x00 && ((*bufferOffset == 0x50 && *(bufferOffset+1) == 0x00) || (*bufferOffset == 0xA4 && *(bufferOffset+1) == 0x03))
-
 // Check if matches either pattern 01 00 04 00 or 01 00 05 XX XX
 #define WAIT (*(bufferIpCheckOffset-4) == 1 && *(bufferIpCheckOffset-3) == 0 && *(bufferIpCheckOffset-2) == 4 && *(bufferIpCheckOffset-1) == 0) || (*(bufferIpCheckOffset-5) == 1 && *(bufferIpCheckOffset-4) == 0 && *(bufferIpCheckOffset-3) == 5)
 
@@ -17,7 +14,7 @@ typedef struct
 	unsigned char name[35];
 } Mission;
 
-unsigned int offset = 0x3AF5D, offsetTemp;	// Use initially as "initial mission" offset. This is for Intro, the program main loop will jump right to An Old Friend though.
+unsigned int offset = 0x3AF5D, offsetTemp = 0x3AF5D;	// Use initially as "initial mission" offset. This is for Intro; the program main loop will jump right to An Old Friend though.
 FILE *mainScm;
 unsigned char *fileBuffer, *bufferIpCheckOffset, missionSelect, offsetType, numMissionsBack = 0, matchFound;
 unsigned short ipCheckOffsetStart, ipCheckOffsetEnd;
@@ -284,6 +281,9 @@ int main()
 			}
 		} // Done checking current mission for waits
 	} // All applicable missions checked
+	printf("\n\nPress enter to exit program.");
+	getchar();
+	getchar();
     cleanup(0);	// End prog successfully
 }
 
