@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include <Windows.h>
+#include <stdlib.h>
+//#include <Windows.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -16,8 +17,8 @@ typedef struct
 
 unsigned int offset = 0x3AF5D, offsetTemp = 0x3AF5D;	// Use initially as "initial mission" offset. This is for Intro; the program main loop will jump right to An Old Friend though.
 FILE *mainScm;
-unsigned char *fileBuffer, *bufferIpCheckOffset, missionSelect, offsetType, numMissionsBack = 0, matchFound;
-unsigned short ipCheckOffsetStart, ipCheckOffsetEnd;
+unsigned char *fileBuffer, *bufferIpCheckOffset, missionSelect, offsetType, matchFound;
+unsigned short ipCheckOffsetStart, ipCheckOffsetEnd, numMissionsBack = 0;
 unsigned long fileLength;
 
 Mission mission[97] =	// Will use the same order as the mission IDs as in the SCM to identify missions
@@ -178,7 +179,7 @@ int main()
 	for (unsigned char missionIndex = 2; missionIndex < 97; missionIndex++)
 	{
 		offsetTemp += mission[missionIndex-1].size;
-		printf("%d - %s (global offset 0x%06x)\n", missionIndex, mission[missionIndex].name, offsetTemp);
+		printf("%d - %s\n", missionIndex, mission[missionIndex].name);
 	}
 	puts("");
 
@@ -192,51 +193,26 @@ int main()
 		cleanup(1);
 	}
 	
-	// Prompt for global or local offset input for IP check range
-	printf("Please now enter the range of mission offsets you would like to check for instapasses for.\nEnter global or local offset? g/l: ");
-	getchar();	// To clear dangling newline
-	offsetType = getchar();
-	if (!(offsetType == 'g' || offsetType == 'l'))
-	{
-		puts("You entered an invalid offset type. Exiting.");
-		cleanup(1);
-	}
-
 	// Get IP check address range
-	printf("Enter the ");
-	if (offsetType == 'g')
-		printf("global offset range start in hexadecimal (0-137D60): ");
-	else printf("local offset range start in hexadecimal (0-FFFF): ");
-	scanf("%x", &ipCheckOffsetStart);
-	if ((offsetType == 'g' && ipCheckOffsetStart > 0x137D60))	// No handling for if it's local because higher than FFFF and it overflows anyway.
-	{
-		puts("You entered an invalid value. Exiting.");
-		cleanup(1);
-	}
-	printf("Enter the ");
-	if (offsetType == 'g')
-		printf("global offset range end in hexadecimal (0-137D60): ");
-	else printf("local offset range end in hexadecimal (0-FFFF): ");
-	scanf("%x", &ipCheckOffsetEnd);
-	if ((offsetType == 'g' && ipCheckOffsetEnd > 0x137D60))	// No handling for if it's local because higher than FFFF and it overflows anyway.
-	{
-		puts("You entered an invalid value. Exiting.");
-		cleanup(1);
-	}
+	printf("Please now enter the range of mission offsets you would like to check for instapasses for.\n");
+	printf("Enter the local offset range start (0-65535): ");
+	scanf("%hu", &ipCheckOffsetStart);
+	//printf("0x%x\n", &ipCheckOffsetStart);
+	printf("Enter the local offset range end (0-65535): ");
+	scanf("%hu", &ipCheckOffsetEnd);
+	//printf("0x%x\n", &ipCheckOffsetEnd);
+
 	if (ipCheckOffsetStart > ipCheckOffsetEnd)
 	{
 		puts("You entered an end smaller than the start of the range. Exiting.");
 		cleanup(1);
 	}
-	if (offsetType == 'g')
-	{
-		ipCheckOffsetStart -= mission[missionSelect].offset;
-		ipCheckOffsetEnd -= mission[missionSelect].offset;
-	}
 	
 	// Prompt for checking the mission n missions prior to the mission-to-be-instapassed in the script
 	printf("Enter number of missions back in the script you would like to test. For example, to test instapasses by starting the previous mission, enter 1. (0 if N/A) ");
-	scanf("%d", &numMissionsBack);
+	getchar();
+	scanf("%hu", &numMissionsBack);
+	//printf("0x%x\n", &numMissionsBack);
 	if (numMissionsBack > missionSelect || numMissionsBack > 96)
 	{
 		puts("You entered an invalid value. Exiting.");
@@ -244,13 +220,13 @@ int main()
 	}
 	if (numMissionsBack) printf("Testing instapasses for %s when starting %s\n", mission[missionSelect].name, mission[missionSelect-numMissionsBack].name);
 	// Increasing IP check offset range by the size of the additional missions
-	if (numMissionsBack)
+	/*if (numMissionsBack)
 		for (unsigned char numMissionsBackCount = 1; numMissionsBackCount <= numMissionsBack; numMissionsBackCount++)
 		{
 			ipCheckOffsetStart += mission[missionSelect-numMissionsBackCount].size;
 			ipCheckOffsetEnd += mission[missionSelect-numMissionsBackCount].size;
-		}
-	printf("Checking local offset range 0x%x - 0x%x\n", ipCheckOffsetStart, ipCheckOffsetEnd);
+		}*/
+	printf("Checking local offset range %d - %d\n", ipCheckOffsetStart, ipCheckOffsetEnd);
 
  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  ////////////////////////////////////////////////////////////////////////MAIN LOOP//////////////////////////////////////////////////////////////
@@ -274,10 +250,10 @@ int main()
 			{
 				if (!matchFound)	// If no match had been previously found for this mission already
 				{
-					printf("\n%s: (0x%06x)", mission[missionIndex].name, offset);	// Prints the mission name only on the first match of the mission
+					printf("\n%s: (%d)", mission[missionIndex].name, offset);	// Prints the mission name only on the first match of the mission
 					matchFound = 1;
 				}
-				printf("\n\tWait found at global offset 0x%06x, or mission offset 0x%x", offset+ipCheckOffset, ipCheckOffset);	// Prints findings
+				printf("\n\tWait found at global offset %d, or mission offset %d", offset+ipCheckOffset, ipCheckOffset);	// Prints findings
 			}
 		} // Done checking current mission for waits
 	} // All applicable missions checked
