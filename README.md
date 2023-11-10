@@ -11,7 +11,7 @@ You may have your own process for getting these, but I'll put this together as a
 
 You can be as liberal as you'd like in specifying the range, but to reduce false positives you should base the range loosely on the logic surrounding the 030C (100%) or 0318 (All Missions) opcode, or other relevant opcode, where it may be plausible to achieve an instapass. I suggest looking for your approximate offset range in a Sanny Builder decompile of main.scm generated with opcodes and global+local offset labels (included) so that you can find the exact offsets you need more easily when viewing the SCM in a hex editor.
 
-You can also use a hex editor to see where precisely an "instapass" will put you. Global offset labels may be helpful for jumping straight to a command. Note that when viewing in a hex editor, multi-byte values are stored in little endian order; e.g. opcode 03A4 will appear as A4 03, and a wait 1000 will appear as 01 00 05 E8 03 (01 00 - 0001, wait; 05 - length of command?; E8 03 - 3E8, which is 1000 in hex). 
+You can also use a hex editor to see where precisely an "instapass" will put you. Global offset labels may be helpful for jumping straight to a command. Note that when viewing in a hex editor, multi-byte values are stored in little endian order; e.g. opcode 03A4 will appear as A4 03, and a wait 1000 will appear as 01 00 05 E8 03 (01 00 - 0001, wait; 05 - short data type?; E8 03 - 3E8, which is 1000 in hex). 
 
 ## Disclaimer
 This was primarily done as an exercise for myself, but I believe it could have some use. Any feedback on improvements is welcome.
