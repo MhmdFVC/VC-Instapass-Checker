@@ -7,6 +7,7 @@
 	"settings": {
 		"files.associations": {
 			"stdint.h": "c"
-		}
+		},
+		"c-cpp-compile-run.output-location": ""
 	}
 }

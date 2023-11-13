@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
+//#include <sys/types.h>
+//#include <unistd.h>
 
 // Check if matches either pattern 01 00 04 00 or 01 00 05 XX XX
 #define WAIT (*(bufferIpCheckOffset-4) == 1 && *(bufferIpCheckOffset-3) == 0 && *(bufferIpCheckOffset-2) == 4 && *(bufferIpCheckOffset-1) == 0) || (*(bufferIpCheckOffset-5) == 1 && *(bufferIpCheckOffset-4) == 0 && *(bufferIpCheckOffset-3) == 5)
@@ -14,13 +14,14 @@ typedef struct
 	unsigned char name[35];
 } Mission;
 
-unsigned int offset = 0x3AF5D, offsetTemp = 0x3AF5D;	// Use initially as "initial mission" offset. This is for Intro; the program main loop will jump right to An Old Friend though.
-FILE *mainScm;
-unsigned char *fileBuffer, *bufferIpCheckOffset, missionSelect, offsetType, matchFound;
-unsigned short ipCheckOffsetStart, ipCheckOffsetEnd, numMissionsBack = 0;
-unsigned long fileLength, jumpedMissionsSize = 0;
+unsigned int missionSelect, offset = 0x3AF5D, offsetTemp = 0x3AF5D;	// Use initially as "initial mission" offset. This is for Intro; the program main loop will jump right to An Old Friend though.
+FILE *mainScm=NULL;
+char *fileBuffer=NULL, *bufferIpCheckOffset=NULL, *mainScmFilePath=NULL;
+unsigned char offsetType, matchFound;
+unsigned short numMissionsBack = 0;
+unsigned int fileLength, ipCheckOffsetStart, ipCheckOffsetEnd, jumpedMissionsSize=0;
 
-Mission mission[97] =	// Will use the same order as the mission IDs as in the SCM to identify missions
+Mission mission[97] =	// JP. Will use the same order as the mission IDs as in the SCM to identify missions
 {	
 	{0x777A, 0, "Initial"},
 	{0x38C3, 0x3AF5D, "Intro"},
@@ -135,9 +136,8 @@ int main()
 	mainScm = fopen("main.scm", "rb");
 	if (!mainScm)
 	{
-		char mainScmFilePath[0xFF];
 		puts("Enter the path to main.scm:");
-		scanf("%[^\n]", &mainScmFilePath);
+		scanf("%[^\n]", mainScmFilePath);
 		mainScm = fopen(mainScmFilePath, "rb");
 		if (!mainScm)
 		{
@@ -161,6 +161,7 @@ int main()
 	case 1269133:
 		puts("Original version. Currently unsupported. Exiting.");
 		cleanup(1);
+		break;
 	 default:
 		puts("Input size does not match any supported VC versions' SCM size. Exiting.");
 		cleanup(1);
@@ -194,10 +195,10 @@ int main()
 	
 	// Get IP check address range
 	printf("Please now enter the range of mission offsets you would like to check for instapasses for.\n");
-	printf("Enter the local offset range start (0-65535): ");
-	scanf("%hu", &ipCheckOffsetStart);
-	printf("Enter the local offset range end (0-65535): ");
-	scanf("%hu", &ipCheckOffsetEnd);
+	printf("Enter the local offset range start: ");
+	scanf("%u", &ipCheckOffsetStart);
+	printf("Enter the local offset range end: ");
+	scanf("%u", &ipCheckOffsetEnd);
 
 	if (ipCheckOffsetStart > ipCheckOffsetEnd)
 	{
@@ -219,7 +220,7 @@ int main()
 	{
 		printf("Testing instapasses for %s when starting %s\n", mission[missionSelect].name, mission[missionSelect-numMissionsBack].name);
 		// Increasing IP check offset range by the size of the additional missions
-		for (unsigned char numMissionsBackCount = 1; numMissionsBackCount <= numMissionsBack; numMissionsBackCount++)
+		for (char numMissionsBackCount = 1; numMissionsBackCount <= numMissionsBack; numMissionsBackCount++)
 		{
 			ipCheckOffsetStart += mission[missionSelect-numMissionsBackCount].size;
 			ipCheckOffsetEnd += mission[missionSelect-numMissionsBackCount].size;
@@ -243,8 +244,9 @@ int main()
 			continue;	// Skip missions that are too short to possibly work
 		if (missionIndex == missionSelect)
 			continue;	// Skip checking the mission-to-be-instapassed because that would just be duping 
-		// Check each IP check offset within the provided range for waits
-		for (unsigned short ipCheckOffset = ipCheckOffsetStart; ipCheckOffset <= ipCheckOffsetEnd; ipCheckOffset++)
+
+		// Main loop within the main loop. Check each IP check offset within the provided range for waits
+		for (unsigned int ipCheckOffset = ipCheckOffsetStart; ipCheckOffset <= ipCheckOffsetEnd; ipCheckOffset++)
 		{
 			bufferIpCheckOffset = fileBuffer + offset + ipCheckOffset;	// Address of file buffer object + global offset of mission being checked + local offset within instapass check range
 			if (WAIT)	// Wait command found
@@ -254,7 +256,9 @@ int main()
 					printf("\n%s: (%d)", mission[missionIndex].name, offset);	// Prints the mission name only on the first match of the mission
 					matchFound = 1;
 				}
-				printf("\n\tWait found at global offset %d, or mission offset %d (%d in %s)", offset+ipCheckOffset, ipCheckOffset, ipCheckOffset-jumpedMissionsSize, mission[missionSelect].name);	// Prints findings
+				printf("\n\tWait found at global offset %d, or mission offset %d", offset+ipCheckOffset, ipCheckOffset);	// Prints findings
+				if (numMissionsBack) // If applicable, adds corresponding local offset in mission-to-be-instapassed for reference
+					printf(" (→%u in %s)", ipCheckOffset-jumpedMissionsSize, mission[missionSelect].name);	
 			}
 		} // Done checking current mission for waits
 	} // All applicable missions checked
@@ -266,9 +270,6 @@ int main()
 
 void cleanup(int retNum)
 {
-	if (&retNum == NULL)
-		retNum = 1;
-
 	if (mainScm)
 		fclose(mainScm);
 	
