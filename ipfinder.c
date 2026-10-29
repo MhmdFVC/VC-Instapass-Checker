@@ -304,7 +304,7 @@ int main() {
 	// Mission selection
 	printf("Please enter the ID of the mission you would like to check for instapasses (2-96): ");
 	scanf("%d", &missionSelect);
-	printf("You selected %s (0x%X)\n", mission[missionSelect].name, mission[missionSelect].offset);
+	printf("You selected %s\n", mission[missionSelect].name);
 	if (missionSelect < AN_OLD_FRIEND || missionSelect > CHECKPOINT_CHARLIE) {
 		puts("Invalid value. Exiting.");
 		cleanup(1);
