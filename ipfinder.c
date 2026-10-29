@@ -15,15 +15,14 @@ typedef struct {
 	uint8_t name[36];
 } Mission;
 
-	
-
 FILE* mainScmFile;
 void *mainScm, *mainScmCursor;
 int matchFound, waitType;
 uint16_t numMissionsBack = 0;
-uint32_t fileLength, ipCheckOffsetStart, ipCheckOffsetEnd, jumpedMissionsSize=0;
+uint32_t fileLength, missionSelect, ipCheckOffsetStart, ipCheckOffsetEnd, jumpedMissionsSize=0;
 
 static const uint8_t md5_jp[] = { 0xF0, 0xE8, 0xD6, 0x48, 0xFD, 0x9E, 0x5C, 0xA1, 0x8E, 0xFF, 0xE6, 0x2B, 0x2A, 0x08, 0x78, 0x9E };
+static const uint8_t md5_intl[] = { 0x97, 0x39, 0x82, 0x00, 0xD4, 0x42, 0x3C, 0x3C, 0xF9, 0x32, 0x85, 0xB1, 0x78, 0x13, 0x6E, 0x75 };
 enum {
 	INITIAL, INTRO, AN_OLD_FRIEND, THE_PARTY, BACK_ALLEY_BRAWL, JURY_FURY, RIOT, TSWINE,
 	MALL_SHOOTOUT, GUARDIAN_ANGELS, SIR_YES_SIR, AHOD, THE_CHASE, PP86, THE_FASTEST_BOAT, SUPPLY_AND_DEMAND,
@@ -39,9 +38,9 @@ enum {
 	TRIAL_BY_DIRT, TEST_TRACK, PCJ_PLAYGROUND, CONE_CRAZY, PIZZA_BOY, RC_RAIDER, RC_BANDIT, RC_BARON, CHECKPOINT_CHARLIE
 };
 
-static const Mission mission[] =	// JP. Will use the same order as the mission IDs as in the SCM to identify missions
-{	
-	{0x777A,	0, "Initial"},
+// Haitian-friendly mission data
+static Mission mission_jp[] = { 
+	{0x777A,	0,		 "Initial"},
 	{0x38C3,	0x3AF5D, "Intro"},
 	{0x754,		0x3E820, "An Old Friend"},
 	{0x32A8,	0x3EF74, "The Party"},
@@ -140,17 +139,118 @@ static const Mission mission[] =	// JP. Will use the same order as the mission I
 	{0x1D06,	0x136062, "Checkpoint Charlie"}
 };	
 
-// Use initially as "initial mission" offset. This is for Intro; the program main loop will jump right to An Old Friend though.
-uint32_t missionSelect;
+// Not done yet, just copypasted from jp for now
+static Mission mission_intl[] = {
+	{0x777A,	0,		 "Initial"},
+	{0x38C3,	0x396AE, "Intro"},
+	{0x754,		0x3CF71, "An Old Friend"},
+	{0x32A8,	0x3D6C5, "The Party"},
+	{0x34F5,	0x4096D, "Back Alley Brawl"},
+	{0x240B,	0x43E62, "Jury Fury"},
+	{0x2DF6,	0x4626D, "Riot"},
+	{0x2560,	0x49063, "Treacherous Swine"},
+	{0x27AB,	0x4B5C3, "Mall Shootout"},
+	{0x6D54,	0x4DD6E, "Guardian Angels"},
+	{0x7CB6,	0x54AC2, "Sir, Yes Sir!"},
+	{0x7B14,	0x5C778, "All Hands On Deck!"},
+	{0x22A3,	0x6428C, "The Chase"},
+	{0x3CFC,	0x6652F, "Phnom Penh '86"},
+	{0x298B,	0x6A22B, "The Fastest Boat"},
+	{0x326C,	0x6CBB6, "Supply & Demand"},
+	{0x3797,	0x6FE22, "Rub Out"},
+	{0x3D81,	0x735B9, "Death Row"},
+	{0x2D03,	0x7733A, "Four Iron"},
+	{0x5CE4,	0x7A03D, "Demolition Man"},
+	{0x2972,	0x7FD21, "Two Bit Hit"},
+	{0x65C0,	0x82693, "No Escape?"},
+	{0x6BB4,	0x88C53, "The Shootist"},
+	{0x290E,	0x8F807, "The Driver"},
+	{0x7E98,	0x92115, "The Job"},
+	{0x42EC,	0x99FAD, "Gun Runner"},
+	{0x22D5,	0x9E299, "Boomshine Saigon"},
+	{0x2C4E,	0xA056E, "Recruitment Drive"},
+	{0x1DF5,	0xA31BC, "Dildo Dodo"},
+	{0x2B0C,	0xA4FB1, "Martha's Mug Shot"},
+	{0x2D9C,	0xA7ABD, "G-Spotlight"},
+	{0x1C7B,	0xAA859, "Shakedown"},
+	{0x3010,	0xAC4D4, "Bar Brawl"},
+	{0x33B5,	0xAF4E4, "Cop Land"},
+	{0x40B6,	0xB2899, "Spilling the Beans"},
+	{0x54E6,	0xB694F, "Hit the Courier"},
+	{0x2E2,		0xBBE35, "Printworks buy"},
+	{0x72E,		0xBC117, "Sunshine Autos buy"},
+	{0x345,		0xBC845, "Porn Studios buy"},
+	{0x90C,		0xBCB8A, "Cherry Poppers buy"},
+	{0x8FE,		0xBD496, "Kaufman Cabs buy"},
+	{0x29F,		0xBDD94, "Malibu buy"},
+	{0x687,		0xBE033, "Boatyard buy"},
+	{0x26E,		0xBE6BA, "Pole Position buy"},
+	{0x263,		0xBE928, "El Swanko Casa buy"},
+	{0x263,		0xBEB8B, "Links View buy"},
+	{0x287,		0xBEDEE, "Hyman Condo buy"},
+	{0x263,		0xBF075, "Ocean Heights buy"},
+	{0x215,		0xBF2D8, "1102 Washington St buy"},
+	{0x215,		0xBF4ED, "Vice Point/Mall safehouse buy"},
+	{0x215,		0xBF702, "Skumole Shack buy"},
+	{0x4913,	0xBF917, "Cap the Collector"},
+	{0x6C5C,	0xC422A, "Keep Your Friends Close..."},
+	{0x2D24,	0xCAE86, "Alloy Wheels of Steel"},
+	{0x857,		0xCDBAA, "Messing with the Man"},
+	{0x32D4,	0xCE401, "Hog Tied"},
+	{0x2A73,	0xD16D5, "Stunt Boat Challenge"},
+	{0x59C5,	0xD4148, "Cannon Fodder"},
+	{0x2DC2,	0xD9B0D, "Naval Engagement"},
+	{0x55AA,	0xDC8CF, "Trojan Voodoo"},
+	{0x316B,	0xE1E79, "Juju Scramble"},
+	{0x45C2,	0xE4FE4, "Bombs Away!"},
+	{0x45B5,	0xE95A6, "Dirty Lickin's"},
+	{0x2270,	0xEDB5B, "Love Juice"},
+	{0x2F48,	0xEFDCB, "Psycho Killer"},
+	{0x389C,	0xF2D13, "Publicity Tour"},
+	{0x194D,	0xF65AF, "Weapon Range"},
+	{0x7A1,		0xF7EFC, "Road Kill"},
+	{0x10AF,	0xF869D, "Waste the Wife"},
+	{0x1AAD,	0xF974C, "Autocide"},
+	{0x21C8,	0xFB1F9, "Check Out at the Check In"},
+	{0x31B2,	0xFD3C1, "Loose Ends"},
+	{0xFD7,		0x100573, "V.I.P."},
+	{0x6D0,		0x10154A, "Friendly Rivalry"},
+	{0x160A,	0x101C1A, "Cabmaggedon"},
+	{0x1BC9,	0x103224, "Taxi Driver"},
+	{0x216F,	0x104DED, "Paramedic"},
+	{0x211C,	0x106F5C, "Firefighter"},
+	{0x42A7,	0x109078, "Vigilante"},
+	{0x4AFA,	0x10D31F, "Hotring"},
+	{0x3E0D,	0x111E19, "Bloodring"},
+	{0x42CA,	0x115C26, "Dirtring"},
+	{0x7AEC,	0x119EF0, "SSA Races"},
+	{0x10B4,	0x1219DC, "Distribution"},
+	{0xEB3,		0x122A90, "Downtown Chopper Checkpoint"},
+	{0xD4B,		0x123943, "Ocean Beach Chopper Checkpoint"},
+	{0xD4B,		0x12468E, "Vice Point Chopper Checkpoint"},
+	{0xDE1,		0x1253D9, "Little Haiti Chopper Checkpoint"},
+	{0x1350,	0x1261BA, "Trial by Dirt"},
+	{0x11CB,	0x12750A, "Test Track"},
+	{0x1A95,	0x1286D5, "PCJ Playground"},
+	{0x1368,	0x12A16A, "Cone Crazy"},
+	{0x35FA,	0x12B4D2, "Pizza Boy"},
+	{0x192C,	0x12EACC, "RC Raider"},
+	{0x225D,	0x1303F8, "RC Bandit"},
+	{0x1A32,	0x132655, "RC Baron"},
+	{0x1D06,	0x134087, "Checkpoint Charlie"}
+};
+
+// This pointer will be updated to point to the correct mission data once the version is detected
+static Mission* mission;
 
 int main() {
+	// Run a cleanup function in case the program is interrupted or terminates
 	signal(SIGINT, cleanup);
     signal(SIGTERM, cleanup);
 
  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////READING IN MAIN.SCM////////////////////////////////////////////////////////////////////////
  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	// Try automatically opening main.scm if it's present, otherwise prompt for it
 	mainScmFile = fopen("main.scm", "rb");
 	if (!mainScmFile) {
@@ -165,7 +265,7 @@ int main() {
 	}
 	puts("main.scm loaded.");
 
-	// Check file hash
+	// Check and print file hash
 	uint8_t md5[16];
 	md5File(mainScmFile, md5);
 	printf("MD5: ");
@@ -175,13 +275,18 @@ int main() {
 	if (!memcmp(md5, md5_jp, sizeof(md5))) {
 		puts("Haitian-friendly version.");
 		fileLength = 1277288;
+		mission = mission_jp;
+	} else if (!memcmp(md5, md5_intl, sizeof(md5))) {
+		puts("Original SCM.");
+		fileLength = 1269133;
+		mission = mission_intl;
 	} else {
 		puts("Hash does not match any versions supported by this tool. Exiting.");
 		cleanup(1);
 	}
 
 	// Read the entire file into a buffer
-	rewind(mainScmFile);	// IDK when the file pointer would have even been changed before this, but apparently this is needed
+	rewind(mainScmFile);	// md5File probably altered the file cursor without rewinding, so this is needed
 	mainScm = calloc(fileLength, 1);
 	fread(mainScm, fileLength, 1, mainScmFile);
 	//rewind(mainScmFile);
@@ -189,7 +294,6 @@ int main() {
  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  ////////////////////////////////////////////PROVIDING INFO AND TAKING INPUT FOR IP CHECK PARAMETERS/////////////////////////////////////////////
  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	// Print out all of the (actual) missions and their mission IDs
 	for (uint8_t missionIndex = 2; missionIndex < 97; missionIndex++) {
 		//offsetTemp += mission[missionIndex-1].size;
@@ -206,7 +310,7 @@ int main() {
 		cleanup(1);
 	}
 	
-	// Get IP check address range
+	// Get instapass check address range
 	printf("Please enter the range of mission offsets you would like to check for instapasses for.\n");
 	printf("Enter the mission offset range start (decimal): ");
 	scanf("%u", &ipCheckOffsetStart);
@@ -219,7 +323,7 @@ int main() {
 	}
 
 	// Prompt for checking the mission n missions prior to the mission-to-be-instapassed in the script
-	printf("Enter number of missions back in the script you would like to test. For example, to test instapasses by starting the previous mission, enter 1. (0 if N/A) ");
+	printf("Enter number of missions back in the script you would like to test. For example, to check for instapasses by starting the previous mission, enter 1. (0 if N/A) ");
 	getchar();
 	scanf("%hu", &numMissionsBack);
 	if (numMissionsBack > missionSelect || numMissionsBack > 96) {
@@ -228,14 +332,16 @@ int main() {
 	}
 	
 	if (numMissionsBack) {
+
 		printf("Testing instapasses for %s when starting %s\n", mission[missionSelect].name, mission[missionSelect-numMissionsBack].name);
+
 		// Increasing IP check offset range by the size of the additional missions
 		for (char numMissionsBackCount = 1; numMissionsBackCount <= numMissionsBack; numMissionsBackCount++) {
 			ipCheckOffsetStart += mission[missionSelect-numMissionsBackCount].size;
 			ipCheckOffsetEnd += mission[missionSelect-numMissionsBackCount].size;
-
 			jumpedMissionsSize += mission[missionSelect-numMissionsBackCount].size;
 		}
+
 	}
 
 	printf("Checking mission offsets %d - %d\n", ipCheckOffsetStart, ipCheckOffsetEnd);
@@ -244,37 +350,31 @@ int main() {
  ////////////////////////////////////////////////////////////////////////MAIN LOOP//////////////////////////////////////////////////////////////
  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		// Start the cursor where 
-
 	// Loop through all (actual) missions
 	for (int m = AN_OLD_FRIEND; m <= CHECKPOINT_CHARLIE; m++) {
-		//curMisGlobalOffset += mission[m-1].size; // Get the global offset of the current mission.
-		
+
 		matchFound = 0;	// Reset flag indicating that at least one match has been found for this mission already
 		if (mission[m].size < ipCheckOffsetStart)
-			continue;	// Skip missions that are too short to possibly work
+			continue;	// Skip missions that are too small to possibly work
 		if (m == missionSelect)
 			continue;	// Skip checking the mission-to-be-instapassed because that would just be duping 
 
-		mainScmCursor = mainScm + mission[m].offset + ipCheckOffsetStart; // The start of the area to check on this iteration
-
 		// Main loop within the main loop. Check each byte within the provided range for anything matching a wait instruction
+		mainScmCursor = mainScm + mission[m].offset + ipCheckOffsetStart;
 		for (int curLocalOffset = ipCheckOffsetStart; curLocalOffset <= ipCheckOffsetEnd; curLocalOffset++) {
-			//printf("mainScm: %X. Mission offset: %X. IP check offset start: %u\n", (uint64_t)mainScm, mission[m].offset, ipCheckOffsetStart);
-			if ((waitType = isWait())) {
+			if ((waitType = isWait())) {	// What I'm calling the "wait type byte" is just the size of the instruction (4 or 5)
 				if (!matchFound) {	// If no match had been previously found for this mission already
 					printf("\n%s", mission[m].name);	// Prints the mission name only on the first match of the mission
 					matchFound = 1;
 				}
-
-				// Print results
 				printf("\n\tWait found at mission offset %d ", curLocalOffset);
 				printf("-> %d in %s", curLocalOffset + waitType - ((numMissionsBack)?jumpedMissionsSize:0), mission[missionSelect].name);
-
 			}
 			mainScmCursor++;
 		} // Done checking current mission for waits
+
 	} // All applicable missions checked
+
 	printf("\n\nDone. Press Enter to exit.");
 	getchar();
 	getchar();
@@ -290,25 +390,16 @@ void cleanup(int retNum) {
 }
 
 int isWait() {
-	uint32_t currentInstruction;
+	static uint32_t currentInstruction;
 	memcpy(&currentInstruction, mainScmCursor, sizeof(currentInstruction));
-	//printf("Wait check bytes: %X\n", currentInstruction);
 	// Check if matches either pattern 01 00 04 00 or 01 00 05 XX XX
 	// The first case is pretty simple
 	if (currentInstruction == 0x40001)
 		return 4;
-
-	currentInstruction &= 0x00FFFFFF;		// Otherwise we only want to check the three lower bytes, so clear out the MSByte.
+	// Otherwise we only want to check the three lower bytes, so clear out the MSByte.
+	currentInstruction &= 0x00FFFFFF;
 	if (currentInstruction == 0x50001)
 		return 5;
 	else
 		return 0;
 }
-/*// Printing out data (for testing)
-		if (!(offset % 16))
-			printf("Offset 0x%06x -- ", offset);
-		printf("%02x ", byteVal);
-		Sleep(5);
-		if (!((offset+1) % 16))
-			printf("\n");
-		*/
