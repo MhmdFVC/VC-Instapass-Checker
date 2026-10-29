@@ -254,10 +254,10 @@ int main() {
 	// Try automatically opening main.scm if it's present, otherwise prompt for it
 	mainScmFile = fopen("main.scm", "rb");
 	if (!mainScmFile) {
-		puts("Enter the path to main.scm:");
-		char* mainScmFilePath;
-		scanf("%[^\n]", mainScmFilePath);
-		mainScmFile = fopen(mainScmFilePath, "rb");
+		puts("Enter the filename of your main.scm:");
+		char mainScmFilename[0xFF];
+		scanf("%[^\n]", mainScmFilename);
+		mainScmFile = fopen(mainScmFilename, "rb");
 		if (!mainScmFile) {
 			puts("Error opening main.scm.");
 			cleanup(1);

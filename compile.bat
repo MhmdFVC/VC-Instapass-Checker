@@ -1,0 +1,1 @@
+clang ipfinder.c md5.c -o ipfinder.exe
